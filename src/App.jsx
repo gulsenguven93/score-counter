@@ -1,4 +1,4 @@
-import { use, useState } from "react";
+import { useState } from "react";
 import "./App.css";
 
 function App() {
@@ -138,6 +138,37 @@ function App() {
     return scores.reduce((total, s) => total + s, 0);
   }
 
+  function updateScore(playerIndex, scoreIndex, newValue) {
+    const score = Number(newValue);
+    if (isNaN(score)) return;
+
+    setPlayers((prevPlayers) => {
+      const updatedPlayers = prevPlayers.map((player, pIndex) => {
+        if (pIndex === playerIndex) {
+          const updatedScores = [...player.scores];
+          updatedScores[scoreIndex] = score;
+          return { ...player, scores: updatedScores };
+        }
+        return player;
+      });
+
+      // Hedef puan kontrolü
+      if (gameType === "target") {
+        const updatedPlayer = updatedPlayers[playerIndex];
+        const newTotal = getTotalScore(updatedPlayer.scores);
+        if (newTotal >= Number(targetScore)) {
+          setIsGameFinished(true);
+        }
+      }
+
+      return updatedPlayers;
+    });
+  }
+
+  function getMaxRoundCount() {
+    return Math.max(...players.map((p) => p.scores.length), 0);
+  }
+
   return (
     <div className="app-container">
       <div className="card">
@@ -250,6 +281,72 @@ function App() {
                   Oyunu Bitir
                 </button>
               )}
+
+            {gameType !== "free" && (
+              <div className="scores-table-container">
+                <h3 className="scores-table-title">Puanlar</h3>
+                <div className="scores-table">
+                  <div
+                    className="scores-table-header"
+                    style={{
+                      gridTemplateColumns: `repeat(${players.length}, 1fr)`,
+                    }}
+                  >
+                    {players.map((player, index) => (
+                      <div key={index} className="score-column-header">
+                        {player.name}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="scores-table-body">
+                    {Array.from({ length: getMaxRoundCount() }).map(
+                      (_, roundIndex) => (
+                        <div
+                          key={roundIndex}
+                          className="scores-table-row"
+                          style={{
+                            gridTemplateColumns: `repeat(${players.length}, 1fr)`,
+                          }}
+                        >
+                          {players.map((player, playerIndex) => (
+                            <div key={playerIndex} className="score-cell">
+                              {player.scores[roundIndex] !== undefined ? (
+                                <input
+                                  type="number"
+                                  className="score-input"
+                                  value={player.scores[roundIndex]}
+                                  onChange={(e) =>
+                                    updateScore(
+                                      playerIndex,
+                                      roundIndex,
+                                      e.target.value
+                                    )
+                                  }
+                                />
+                              ) : (
+                                <span className="score-empty">-</span>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    )}
+                  </div>
+                  <div
+                    className="scores-table-footer"
+                    style={{
+                      gridTemplateColumns: `repeat(${players.length}, 1fr)`,
+                    }}
+                  >
+                    {players.map((player, index) => (
+                      <div key={index} className="score-total">
+                        Toplam: {getTotalScore(player.scores)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
         {isGameFinished && (
